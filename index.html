@@ -6,129 +6,225 @@
 <title>Calendario Plan</title>
 
 <style>
-  * { box-sizing: border-box; }
+  *{ box-sizing:border-box; }
+  :root{ --gap:8px; --pagePad:16px; --headerH:52px; --dowH:28px; }
 
-  :root{
-    --gap: 8px;
-    --pagePad: 16px;
-    --headerH: 52px; /* espacio estimado del título */
-    --dowH: 28px;    /* alto de encabezado de días */
-  }
-
-  body {
+  body{
     font-family: Arial, sans-serif;
-    margin: 0;
-    padding: var(--pagePad);
-    height: 100vh;
-    overflow: hidden; /* clave: no scroll, entra todo */
-    background: #fff;
+    margin:0; padding:var(--pagePad);
+    height:100vh; overflow:hidden;
   }
 
-  h1 {
-    height: var(--headerH);
-    margin: 0;
-    display: flex;
-    align-items: center;
-    font-size: 20px;
+  h1{
+    height:var(--headerH);
+    margin:0 0 10px;
+    display:flex; align-items:center;
+    font-size:20px;
   }
 
-  .grid {
-    width: 100%;
-    max-width: 1100px;
-    margin: 0 auto;
-
-    display: grid;
-    grid-template-columns: repeat(7, minmax(0, 1fr));
-    gap: var(--gap);
-
-    /* altura total disponible para TODO el calendario */
-    height: calc(100vh - (var(--pagePad) * 2) - var(--headerH));
+  .grid{
+    width:100%; max-width:1100px; margin:0 auto;
+    display:grid;
+    grid-template-columns:repeat(7, minmax(0,1fr));
+    gap:var(--gap);
+    height:calc(100vh - (var(--pagePad)*2) - var(--headerH));
   }
 
-  .dow {
-    font-weight: 700;
-    text-align: center;
-    padding: 6px 0;
-    height: var(--dowH);
-    font-size: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  .dow{
+    font-weight:700; text-align:center;
+    height:var(--dowH);
+    display:flex; align-items:center; justify-content:center;
+    font-size:12px;
   }
 
-  /* 6 filas de días (42 celdas) */
-  .cell {
-    border: 1px solid #ccc;
-    border-radius: 10px;
-    padding: 8px;
-    background: white;
-
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-
-    overflow: hidden;  /* evita desborde */
-    min-height: 0;     /* importante para flex + overflow */
+  .cell{
+    border:1px solid #ccc;
+    border-radius:10px;
+    padding:8px;
+    background:#fff;
+    display:flex; flex-direction:column;
+    gap:6px;
+    overflow:hidden;
+    min-height:0;
+    position:relative;
   }
 
-  .muted { opacity: 0.3; }
+  .muted{ opacity:.3; }
 
-  .daynum {
-    font-weight: 800;
-    font-size: 14px;
-    line-height: 1;
-    flex: 0 0 auto;
+  .toprow{
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto auto;
+  align-items: start;
+  column-gap: 8px;
+  row-gap: 6px;
+}
+/* Contenedor de acciones a la derecha (solo +Nota) */
+.actions{
+  grid-column: 2 / 3;
+  grid-row: 1 / 2;
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+  align-items: center;
+}
+  .daynum{
+  grid-column: 1 / 2;
+  grid-row: 1 / 2;
+  font-weight: 800;
+  font-size: 14px;
+  line-height: 1;
+}
+
+  /* Botón +Nota */
+.noteBtn{
+  border: 1px solid #ccc;
+  background: #fff;
+  border-radius: 10px;
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.noteBtn:active{ transform: translateY(1px); }
+
+/* Botón Ver notas ocupa la fila 2 completa (no se pisa nunca) */
+.viewNotesBtn{
+  grid-column: 1 / 3;
+  grid-row: 2 / 3;
+  justify-self: start;
+
+  border: 1px solid #00bfff;
+  background: #e6f7ff;
+  border-radius: 10px;
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.viewNotesBtn:active{ transform: translateY(1px); }
+
+@media (max-width:600px){
+  .noteBtn{ font-size: 11px; padding: 4px 7px; border-radius: 12px; }
+  .viewNotesBtn{ font-size: 11px; padding: 4px 7px; border-radius: 12px; }
+}
+
+  .items{
+    margin:0;
+    padding-left:16px;
+    font-size:12px;
+    line-height:1.25;
+    overflow:hidden;
+    min-height:0;
+    display:-webkit-box;
+    -webkit-box-orient:vertical;
+    -webkit-line-clamp:5;
   }
 
-  .items {
-    margin: 0;
-    padding-left: 16px;
-    font-size: 12px;
-    line-height: 1.25;
+  .tipo-martin{ background-color:#c8f7c5; border-color:#2ecc71; }
+  .tipo-paula{ background-color:#e9d5ff; border-color:#8b5cf6; }
 
-    /* permite que el contenido se recorte con elegancia */
-    overflow: hidden;
-    min-height: 0;
-
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 5; /* desktop: hasta 5 líneas */
-  }
-
-  /* Colores por persona */
-  .tipo-martin { background-color: #c8f7c5; border-color: #2ecc71; }
-  .tipo-paula  { background-color: #e9d5ff; border-color: #8b5cf6; }
-
-  /* Hoy: NO pisa fondo, solo resalta */
-  .today {
-    position: relative;
+  .today{
+    position:relative;
     box-shadow: 0 0 0 3px #00bfff;
   }
 
-  /* ===== Responsive fino para celular ===== */
-  @media (max-width: 600px) {
-    :root{
-      --gap: 6px;
-      --pagePad: 12px;
-      --headerH: 44px;
-      --dowH: 24px;
-    }
-
-    h1 { font-size: 16px; }
-
-    .cell {
-      padding: 6px;
-      border-radius: 12px;
-    }
-
-    .daynum { font-size: 13px; }
-
-    .items {
-      font-size: 11px;
-      -webkit-line-clamp: 3; /* mobile: menos líneas para que entre el mes sí o sí */
-      padding-left: 14px;
-    }
+  /* ===== Modal ===== */
+  .modalOverlay{
+    position:fixed; inset:0;
+    background: rgba(0,0,0,.35);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding:16px;
+    z-index:9999;
   }
+  .modal{
+    width:min(520px, 100%);
+    background:#fff;
+    border-radius:14px;
+    border:1px solid #ddd;
+    padding:14px;
+    box-shadow:0 10px 30px rgba(0,0,0,.2);
+  }
+  .modal h2{
+    margin:0 0 10px;
+    font-size:16px;
+  }
+  .modal label{
+    display:block;
+    font-size:12px;
+    font-weight:700;
+    margin:8px 0 6px;
+  }
+  .modal textarea{
+    width:100%;
+    min-height:110px;
+    resize:vertical;
+    border:1px solid #ccc;
+    border-radius:10px;
+    padding:10px;
+    font-size:14px;
+    outline:none;
+  }
+  .modalActions{
+    display:flex;
+    gap:8px;
+    justify-content:flex-end;
+    margin-top:10px;
+  }
+  .btn{
+    border:1px solid #ccc;
+    background:#fff;
+    border-radius:10px;
+    padding:10px 12px;
+    font-weight:800;
+    cursor:pointer;
+  }
+  .btnPrimary{
+    border-color:#111;
+    background:#111;
+    color:#fff;
+  }
+  .btn[disabled]{ opacity:.5; cursor:not-allowed; }
+
+  .status{
+    margin-top:8px;
+    font-size:12px;
+    color:#333;
+    min-height:16px;
+  }
+  .status.error{ color:#b00020; }
+
+  @media (max-width:600px){
+    :root{ --gap:6px; --pagePad:12px; --headerH:44px; --dowH:24px; }
+    h1{ font-size:16px; }
+    .cell{ padding:6px; border-radius:12px; }
+    .items{ font-size:11px; -webkit-line-clamp:3; }
+    .noteBtn{ padding:4px 7px; font-size:11px; }
+  }
+
+
+.viewNotesBtn{
+  border:1px solid #00bfff;
+  background:#e6f7ff;
+  border-radius:10px;
+  padding:4px 8px;
+  font-size:12px;
+  font-weight:800;
+  cursor:pointer;
+  white-space:nowrap;
+}
+.viewNotesBtn:active{ transform: translateY(1px); }
+
+.notesList{
+  margin: 8px 0 0;
+  padding-left: 18px;
+  font-size: 13px;
+  line-height: 1.35;
+}
 </style>
 </head>
 
@@ -137,33 +233,267 @@
 <h1 id="monthLabel"></h1>
 <div class="grid" id="calendar"></div>
 
+<!-- Modal -->
+<div class="modalOverlay" id="modalOverlay" aria-hidden="true">
+  <div class="modal" role="dialog" aria-modal="true">
+    <h2 id="modalTitle">Nota</h2>
+
+    <label for="notaInput">Nota</label>
+    <textarea id="notaInput" placeholder="Escribí tu nota..."></textarea>
+
+    <div class="status" id="modalStatus"></div>
+
+    <div class="modalActions">
+      <button class="btn" id="cancelBtn">Cancelar</button>
+      <button class="btn btnPrimary" id="okBtn">Aceptar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Ver Notas -->
+<div class="modalOverlay" id="notesOverlay" aria-hidden="true">
+  <div class="modal" role="dialog" aria-modal="true">
+    <h2 id="notesTitle">Notas</h2>
+    <div id="notesBody"></div>
+    <div class="modalActions">
+      <button class="btn" id="notesCloseBtn">Cerrar</button>
+    </div>
+  </div>
+</div>
 <script>
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz1KT8pzPLxq4-k7DnjugfYvMeEk2qnraY8DaxS9oQuHtTclj1wycrcLlijE8ECfcBvWw/exec";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwzPxteGuiSggF0AbDa8R5-4xDgUVOh9gjn-Q19XsRTT3mdhiJpxGNY4exEfnSH7qIQTg/exec";
 
 const calendar = document.getElementById("calendar");
 const monthLabel = document.getElementById("monthLabel");
 
-const monthNames = ["Enero","Febrero","Marzo","Abril","Mayo","Junio",
-"Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
-
+const monthNames = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 const dow = ["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"];
 
 const pad = n => String(n).padStart(2,"0");
 const ymd = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 
 let planData = {};
+let notasData = {}; // "YYYY-MM-DD" -> ["nota1", ...]
+let year, month;
 
-async function cargarDatos() {
-  const res = await fetch(APPS_SCRIPT_URL, { cache: "no-store" });
-  planData = await res.json();
-}
+// Modal refs
+const modalOverlay = document.getElementById("modalOverlay");
+const modalTitle = document.getElementById("modalTitle");
+const notaInput = document.getElementById("notaInput");
+const modalStatus = document.getElementById("modalStatus");
+const cancelBtn = document.getElementById("cancelBtn");
+const okBtn = document.getElementById("okBtn");
+
+let currentDiaKey = null;
 
 function mondayIndex(date){ return (date.getDay() + 6) % 7; }
 
-function renderCalendar() {
+function openModal(diaKey){
+  currentDiaKey = diaKey;
+  modalTitle.textContent = `Nota para ${diaKey}`;
+  notaInput.value = "";
+  modalStatus.textContent = "";
+  modalStatus.classList.remove("error");
+  okBtn.disabled = false;
+
+  modalOverlay.style.display = "flex";
+  modalOverlay.setAttribute("aria-hidden", "false");
+  setTimeout(() => notaInput.focus(), 0);
+}
+
+function closeModal(){
+  modalOverlay.style.display = "none";
+  modalOverlay.setAttribute("aria-hidden", "true");
+  currentDiaKey = null;
+}
+
+cancelBtn.addEventListener("click", closeModal);
+modalOverlay.addEventListener("click", (e) => {
+  if (e.target === modalOverlay) closeModal();
+});
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && modalOverlay.style.display === "flex") closeModal();
+});
+
+async function guardarNota(){
+  const nota = notaInput.value.trim();
+  if (!currentDiaKey) return;
+
+  if (!nota){
+    modalStatus.textContent = "Escribí una nota antes de aceptar.";
+    modalStatus.classList.add("error");
+    return;
+  }
+
+  okBtn.disabled = true;
+  modalStatus.classList.remove("error");
+  modalStatus.textContent = "Guardando...";
+
+  try{
+    // ✅ Evita preflight (CORS) usando x-www-form-urlencoded
+    const body = new URLSearchParams({
+      dia: currentDiaKey,
+      nota: nota
+    });
+
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+      body: body.toString()
+    });
+
+    const data = await res.json();
+
+    if (!data.ok){
+      throw new Error(data.error || "No se pudo guardar la nota.");
+    }
+
+    modalStatus.textContent = "✅ Nota guardada.";
+    await cargarDatos();
+renderCalendar();
+setTimeout(closeModal, 300);
+
+  } catch(err){
+    okBtn.disabled = false;
+    modalStatus.textContent = "❌ " + String(err.message || err);
+    modalStatus.classList.add("error");
+  }
+}
+okBtn.addEventListener("click", guardarNota);
+
+async function cargarDatos() {
+  const res = await fetch(APPS_SCRIPT_URL, { cache: "no-store" });
+  const data = await res.json();
+
+  if (data && data.ok === false) {
+    throw new Error(data.error || "Error en backend");
+  }
+
+  // Nuevo formato
+  planData = (data && data.plan) ? data.plan : {};
+  notasData = (data && data.notas) ? data.notas : {};
+}
+
+function createCellForDate(d){
+  const key = ymd(d);
+  const texts = planData[key] || [];
+  const notes = notasData[key] || [];
+
+  const cell = document.createElement("div");
+  cell.className = "cell";
+
+  if (d.getMonth() !== month) cell.classList.add("muted");
+
+  // Hoy (solo borde celeste)
+  const today = new Date(); today.setHours(12,0,0,0);
+  const dd = new Date(d); dd.setHours(12,0,0,0);
+  if (dd.getFullYear()===today.getFullYear() && dd.getMonth()===today.getMonth() && dd.getDate()===today.getDate()){
+    cell.classList.add("today");
+  }
+
+  // Color por persona
+  const lowerTexts = texts.map(t => String(t).trim().toLowerCase());
+  const tieneMartin = lowerTexts.some(t => t.includes("martin"));
+  const tienePaula  = lowerTexts.some(t => t.includes("paula"));
+  if (tieneMartin) cell.classList.add("tipo-martin");
+  else if (tienePaula) cell.classList.add("tipo-paula");
+
+// Header de celda: número + acciones + ver notas abajo
+const top = document.createElement("div");
+top.className = "toprow";
+
+const dayNum = document.createElement("div");
+dayNum.className = "daynum";
+dayNum.textContent = d.getDate();
+
+// Acciones (derecha): + Nota
+const actions = document.createElement("div");
+actions.className = "actions";
+
+const btnAdd = document.createElement("button");
+btnAdd.className = "noteBtn";
+btnAdd.type = "button";
+btnAdd.textContent = "+ Nota";
+btnAdd.addEventListener("click", () => openModal(key));
+
+actions.appendChild(btnAdd);
+
+top.appendChild(dayNum);
+top.appendChild(actions);
+
+// Botón Ver notas (fila 2 completa)
+if (notes.length > 0) {
+  const btnView = document.createElement("button");
+  btnView.className = "viewNotesBtn";
+  btnView.type = "button";
+  btnView.textContent = `Ver notas (${notes.length})`;
+  btnView.addEventListener("click", () => openNotesModal(key, notes));
+  top.appendChild(btnView);
+}
+
+cell.appendChild(top);
+
+  // Items
+  if (texts.length > 0) {
+    const ul = document.createElement("ul");
+    ul.className = "items";
+    texts.forEach(t => {
+      const li = document.createElement("li");
+      li.textContent = t;
+      ul.appendChild(li);
+    });
+    cell.appendChild(ul);
+  }
+
+  return cell;
+}
+
+
+// Modal ver notas refs
+const notesOverlay = document.getElementById("notesOverlay");
+const notesTitle = document.getElementById("notesTitle");
+const notesBody = document.getElementById("notesBody");
+const notesCloseBtn = document.getElementById("notesCloseBtn");
+
+function openNotesModal(diaKey, notesArr){
+  notesTitle.textContent = `Notas del ${diaKey}`;
+
+  if (!notesArr || notesArr.length === 0) {
+    notesBody.innerHTML = "<em>No hay notas para este día.</em>";
+  } else {
+    const ul = document.createElement("ul");
+    ul.className = "notesList";
+    notesArr.forEach(n => {
+      const li = document.createElement("li");
+      li.textContent = n;
+      ul.appendChild(li);
+    });
+    notesBody.innerHTML = "";
+    notesBody.appendChild(ul);
+  }
+
+  notesOverlay.style.display = "flex";
+  notesOverlay.setAttribute("aria-hidden", "false");
+}
+
+function closeNotesModal(){
+  notesOverlay.style.display = "none";
+  notesOverlay.setAttribute("aria-hidden", "true");
+}
+
+notesCloseBtn.addEventListener("click", closeNotesModal);
+notesOverlay.addEventListener("click", (e) => {
+  if (e.target === notesOverlay) closeNotesModal();
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && notesOverlay.style.display === "flex") closeNotesModal();
+});
+
+function renderCalendar(){
   calendar.innerHTML = "";
 
-  // Encabezados
+  // headers
   dow.forEach(d => {
     const div = document.createElement("div");
     div.className = "dow";
@@ -172,72 +502,24 @@ function renderCalendar() {
   });
 
   const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth();
+  year = now.getFullYear();
+  month = now.getMonth();
   monthLabel.textContent = monthNames[month] + " " + year;
 
-  // Inicio del grid (lunes de la semana donde cae el día 1)
   const firstDay = new Date(year, month, 1);
   firstDay.setHours(12,0,0,0);
   const firstDow = mondayIndex(firstDay);
   const startDate = new Date(year, month, 1 - firstDow);
   startDate.setHours(12,0,0,0);
 
-  const today = new Date();
-  today.setHours(12,0,0,0);
-
-  // 42 celdas (6 semanas)
-  for (let i = 0; i < 42; i++) {
+  // 42 celdas
+  for (let i=0; i<42; i++){
     const d = new Date(startDate);
     d.setDate(startDate.getDate() + i);
-
-    const key = ymd(d);
-    const texts = planData[key] || [];
-
-    const cell = document.createElement("div");
-    cell.className = "cell";
-    if (d.getMonth() !== month) cell.classList.add("muted");
-
-    // Hoy (celeste, sin pisar fondo)
-    if (
-      d.getDate() === today.getDate() &&
-      d.getMonth() === today.getMonth() &&
-      d.getFullYear() === today.getFullYear()
-    ) {
-      cell.classList.add("today");
-    }
-
-    // Color por persona
-    const lowerTexts = texts.map(t => String(t).trim().toLowerCase());
-    const tieneMartin = lowerTexts.some(t => t.includes("martin"));
-    const tienePaula  = lowerTexts.some(t => t.includes("paula"));
-
-    if (tieneMartin) cell.classList.add("tipo-martin");
-    else if (tienePaula) cell.classList.add("tipo-paula");
-
-    const dayNum = document.createElement("div");
-    dayNum.className = "daynum";
-    dayNum.textContent = d.getDate();
-    cell.appendChild(dayNum);
-
-    if (texts.length > 0) {
-      const ul = document.createElement("ul");
-      ul.className = "items";
-
-      texts.forEach(t => {
-        const li = document.createElement("li");
-        li.textContent = t;
-        ul.appendChild(li);
-      });
-
-      cell.appendChild(ul);
-    }
-
-    calendar.appendChild(cell);
+    calendar.appendChild(createCellForDate(d));
   }
 
-  // Ajuste fino: seteamos altura de cada celda para entrar exacto
-  // (altura total grid - fila dow) / 6 semanas, restando gaps.
+  // Ajuste de alturas para que entre el mes completo
   requestAnimationFrame(() => {
     const grid = calendar; // .grid
     const styles = getComputedStyle(grid);
@@ -246,10 +528,9 @@ function renderCalendar() {
     const gridHeight = grid.clientHeight;
     const dowHeight = Array.from(grid.children).slice(0,7).reduce((max, el) => Math.max(max, el.clientHeight), 0);
 
-    const available = gridHeight - dowHeight - (gap * 6); // 6 gaps verticales entre 7 filas (dow + 6 semanas)
+    const available = gridHeight - dowHeight - (gap * 6);
     const cellH = Math.floor(available / 6);
 
-    // aplicar a las 42 celdas (después de los 7 headers)
     const cells = Array.from(grid.children).slice(7);
     cells.forEach(c => { c.style.height = cellH + "px"; });
   });
@@ -257,11 +538,10 @@ function renderCalendar() {
 
 (async function init(){
   try { await cargarDatos(); }
-  catch(e) { console.error("Error cargando datos", e); }
+  catch(e){ console.error("Error cargando datos", e); }
   renderCalendar();
 })();
 
-// Recalcular al rotar/cambiar tamaño
 window.addEventListener("resize", () => renderCalendar());
 </script>
 
