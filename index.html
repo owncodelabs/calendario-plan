@@ -6,88 +6,132 @@
 <title>Calendario Plan</title>
 
 <style>
-body { font-family: Arial, sans-serif; margin: 30px; }
-h1 { margin-bottom: 10px; }
+  * { box-sizing: border-box; }
 
-.grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 8px;
-  max-width: 1100px;
-}
+  body { font-family: Arial, sans-serif; margin: 30px; }
+  h1 { margin: 0 0 10px; }
 
-.dow {
-  font-weight: bold;
-  text-align: center;
-  padding: 6px 0;
-}
+  /* Barra de controles (solo se ve en celular) */
+  .controls {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    max-width: 1100px;
+    margin: 0 0 12px;
+  }
+  .controls .left, .controls .right { display: flex; gap: 8px; align-items: center; }
+  .btn {
+    border: 1px solid #ccc;
+    background: #fff;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-weight: 700;
+    cursor: pointer;
+    user-select: none;
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn[disabled] { opacity: .4; cursor: not-allowed; }
 
-.cell {
-  border: 1px solid #ccc;
-  border-radius: 10px;
-  min-height: 130px;
-  padding: 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  background: white;
-}
+  .weekLabel {
+    font-weight: 700;
+    color: #333;
+    font-size: 13px;
+    text-align: center;
+    flex: 1 1 auto;
+  }
 
-.muted { opacity: 0.3; }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+    max-width: 1100px;
+  }
 
-.daynum {
-  font-weight: bold;
-  font-size: 14px;
-}
+  .dow {
+    font-weight: bold;
+    text-align: center;
+    padding: 6px 0;
+  }
 
-.items {
-  margin: 0;
-  padding-left: 16px;
-  font-size: 12px;
-  line-height: 1.3;
-}
+  .cell {
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    min-height: 130px;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    background: white;
+    overflow: hidden;
+  }
 
-.tipo-i {
-  background-color: #c8f7c5; /* verde suave */
-  border-color: #2ecc71;
-}
+  .muted { opacity: 0.3; }
 
-.tipo-mt {
-  background-color: #fff5c4; /* amarillo suave */
-  border-color: #f1c40f;
-}
+  .daynum { font-weight: bold; font-size: 14px; }
 
-.today {
-  border: 2px solid #00bfff;
-  background-color: #e6f7ff;
-  box-shadow: 0 0 0 2px rgba(0,191,255,0.15);
-}
+  .items {
+    margin: 0;
+    padding-left: 16px;
+    font-size: 12px;
+    line-height: 1.3;
+  }
 
-.tipo-martin {
-  background-color: #c8f7c5;
-  border-color: #2ecc71;
-}
+  /* Colores por persona */
+  .tipo-martin { background-color: #c8f7c5; border-color: #2ecc71; }
+  .tipo-paula  { background-color: #e9d5ff; border-color: #8b5cf6; }
 
-.tipo-paula {
-  background-color: #e9d5ff;
-  border-color: #8b5cf6;
-}
+  /* Hoy: NO pisa fondo, solo resalta */
+  .today {
+    position: relative;
+    box-shadow: 0 0 0 3px #00bfff;
+  }
 
-.today {
-  position: relative;
-  box-shadow: 0 0 0 3px #00bfff;
-}
+  /* ===== Responsive: CELULAR ===== */
+  @media (max-width: 600px) {
+    body { margin: 16px; }
+    h1 { font-size: 18px; }
 
+    .controls { display: flex; }
 
+    /* En móvil seguimos con 7 columnas, pero mostramos SOLO 1 semana (7 celdas) */
+    .grid { gap: 6px; }
+
+    .cell {
+      min-height: 105px;
+      padding: 8px;
+      border-radius: 12px;
+    }
+
+    .items { font-size: 12px; }
+
+    /* Para que no se desborde infinito en celdas chicas */
+    .items{
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 5;
+      overflow: hidden;
+    }
+  }
 </style>
 </head>
 
 <body>
 
 <h1 id="monthLabel"></h1>
+
+<!-- Controles de semana (solo móvil) -->
+<div class="controls" id="controls">
+  <div class="left">
+    <button class="btn" id="prevWeek">◀</button>
+  </div>
+  <div class="weekLabel" id="weekLabel"></div>
+  <div class="right">
+    <button class="btn" id="nextWeek">▶</button>
+  </div>
+</div>
+
 <div class="grid" id="calendar"></div>
-
-
 
 <script>
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz1KT8pzPLxq4-k7DnjugfYvMeEk2qnraY8DaxS9oQuHtTclj1wycrcLlijE8ECfcBvWw/exec";
@@ -95,25 +139,149 @@ const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz1KT8pzPLxq4-k
 const calendar = document.getElementById("calendar");
 const monthLabel = document.getElementById("monthLabel");
 
-const monthNames = ["Enero","Febrero","Marzo","Abril","Mayo","Junio",
-"Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+const controls = document.getElementById("controls");
+const prevWeekBtn = document.getElementById("prevWeek");
+const nextWeekBtn = document.getElementById("nextWeek");
+const weekLabelEl = document.getElementById("weekLabel");
 
+const monthNames = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 const dow = ["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"];
 
 const pad = n => String(n).padStart(2,"0");
 const ymd = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const dmy = d => `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()}`;
+
+// lunes=0 ... domingo=6
+function mondayIndex(date){
+  return (date.getDay() + 6) % 7;
+}
+
+// devuelve una nueva Date al lunes de la semana de "date"
+function startOfWeek(date){
+  const d = new Date(date);
+  const idx = mondayIndex(d);
+  d.setDate(d.getDate() - idx);
+  d.setHours(12,0,0,0);
+  return d;
+}
+
+function addDays(date, days){
+  const d = new Date(date);
+  d.setDate(d.getDate() + days);
+  return d;
+}
+
+function sameYMD(a,b){
+  return a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate();
+}
+
+function isMobile(){
+  return window.matchMedia("(max-width: 600px)").matches;
+}
 
 let planData = {};
 
+// Estado de mes actual
+let currentMonthDate = new Date(); // hoy
+let year, month;
+
+// Estado semana móvil: índice 0..5 (6 semanas del grid del mes)
+let weekIndex = 0;
+let gridStartDate; // lunes del primer cuadrante del mes (puede ser del mes anterior)
+
 async function cargarDatos() {
-  const res = await fetch(APPS_SCRIPT_URL);
+  const res = await fetch(APPS_SCRIPT_URL, { cache: "no-store" });
   planData = await res.json();
 }
 
-function renderCalendar() {
+// Calcula el lunes del primer cuadrante del grid mensual (la "semana 0")
+function computeGridStart(year, month){
+  const firstDay = new Date(year, month, 1);
+  firstDay.setHours(12,0,0,0);
+  const firstDow = mondayIndex(firstDay); // 0..6
+  const start = new Date(year, month, 1 - firstDow);
+  start.setHours(12,0,0,0);
+  return start;
+}
 
+// Para móvil: setea weekIndex a la semana que contiene "today" (si cae en el grid del mes)
+function computeInitialWeekIndex(){
+  const today = new Date();
+  today.setHours(12,0,0,0);
+
+  // lunes de la semana de hoy
+  const todayWeekStart = startOfWeek(today);
+
+  // diferencia en días entre el gridStart y el monday de hoy
+  const diffDays = Math.round((todayWeekStart - gridStartDate) / (86400*1000));
+  const idx = Math.floor(diffDays / 7);
+
+  // válido si está dentro 0..5 y esa semana toca el mes actual
+  if (idx >= 0 && idx <= 5) return idx;
+
+  // si hoy no cae en el grid de este mes (raro, pero puede si mirás otro mes) -> semana 0
+  return 0;
+}
+
+function setWeekLabel(){
+  const start = addDays(gridStartDate, weekIndex * 7);
+  const end = addDays(start, 6);
+  weekLabelEl.textContent = `${dmy(start)} – ${dmy(end)}`;
+}
+
+// Habilita/deshabilita botones en móvil (no salir del grid de 6 semanas)
+function updateWeekButtons(){
+  prevWeekBtn.disabled = (weekIndex <= 0);
+  nextWeekBtn.disabled = (weekIndex >= 5);
+}
+
+function createCellForDate(d){
+  const key = ymd(d);
+  const texts = planData[key] || [];
+
+  const cell = document.createElement("div");
+  cell.className = "cell";
+
+  // fuera de mes
+  if (d.getMonth() !== month) cell.classList.add("muted");
+
+  // Hoy
+  const today = new Date(); today.setHours(12,0,0,0);
+  if (sameYMD(d, today)) cell.classList.add("today");
+
+  // 🎯 COLOR SEGÚN PERSONA
+  const lowerTexts = texts.map(t => String(t).trim().toLowerCase());
+  const tieneMartin = lowerTexts.some(t => t.includes("martin"));
+  const tienePaula  = lowerTexts.some(t => t.includes("paula"));
+
+  if (tieneMartin) cell.classList.add("tipo-martin");
+  else if (tienePaula) cell.classList.add("tipo-paula");
+
+  const dayNum = document.createElement("div");
+  dayNum.className = "daynum";
+  dayNum.textContent = d.getDate();
+  cell.appendChild(dayNum);
+
+  if (texts.length > 0) {
+    const ul = document.createElement("ul");
+    ul.className = "items";
+
+    texts.forEach(t => {
+      const li = document.createElement("li");
+      li.textContent = t;
+      ul.appendChild(li);
+    });
+
+    cell.appendChild(ul);
+  }
+
+  return cell;
+}
+
+function renderDesktopMonth(){
   calendar.innerHTML = "";
 
+  // headers
   dow.forEach(d => {
     const div = document.createElement("div");
     div.className = "dow";
@@ -121,74 +289,81 @@ function renderCalendar() {
     calendar.appendChild(div);
   });
 
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth();
+  // 42 celdas
+  for (let i = 0; i < 42; i++) {
+    const d = addDays(gridStartDate, i);
+    calendar.appendChild(createCellForDate(d));
+  }
 
+  // Controles ocultos (CSS los muestra solo en móvil, pero por si acaso)
+  controls.style.display = "none";
+}
+
+function renderMobileWeek(){
+  calendar.innerHTML = "";
+
+  // headers
+  dow.forEach(d => {
+    const div = document.createElement("div");
+    div.className = "dow";
+    div.textContent = d;
+    calendar.appendChild(div);
+  });
+
+  const weekStart = addDays(gridStartDate, weekIndex * 7);
+
+  for (let i = 0; i < 7; i++) {
+    const d = addDays(weekStart, i);
+    calendar.appendChild(createCellForDate(d));
+  }
+
+  // Controles visibles en móvil (CSS ya lo hace, pero dejamos consistente)
+  controls.style.display = "";
+  setWeekLabel();
+  updateWeekButtons();
+}
+
+function render(){
+  const now = currentMonthDate;
+  year = now.getFullYear();
+  month = now.getMonth();
   monthLabel.textContent = monthNames[month] + " " + year;
 
-  const firstDay = new Date(year, month, 1);
-  const firstDow = (firstDay.getDay() + 6) % 7;
-  const startDate = new Date(year, month, 1 - firstDow);
+  gridStartDate = computeGridStart(year, month);
 
-  for (let i = 0; i < 42; i++) {
-    const d = new Date(startDate);
-    d.setDate(startDate.getDate() + i);
-
-    const key = ymd(d);
-    const texts = planData[key] || [];
-
-    const cell = document.createElement("div");
-    cell.className = "cell";
-    if (d.getMonth() !== month) cell.classList.add("muted");
-
-
-// 🔵 Resaltar día actual
-const today = new Date();
-if (
-  d.getDate() === today.getDate() &&
-  d.getMonth() === today.getMonth() &&
-  d.getFullYear() === today.getFullYear()
-) {
-  cell.classList.add("today");
-}
-
-  // 🎯 COLOR SEGÚN CONTENIDO (I prioridad sobre M/MT)
-const cleanTexts = texts.map(t => String(t).trim().toUpperCase());
-
-// 🎯 COLOR SEGÚN PERSONA
-const lowerTexts = texts.map(t => String(t).trim().toLowerCase());
-
-const tieneMartin = lowerTexts.some(t => t.includes("martin"));
-const tienePaula  = lowerTexts.some(t => t.includes("paula"));
-
-if (tieneMartin) {
-  cell.classList.add("tipo-martin");
-} else if (tienePaula) {
-  cell.classList.add("tipo-paula");
-}
-
-    const dayNum = document.createElement("div");
-    dayNum.className = "daynum";
-    dayNum.textContent = d.getDate();
-    cell.appendChild(dayNum);
-
-    if (texts.length > 0) {
-      const ul = document.createElement("ul");
-      ul.className = "items";
-
-      texts.forEach(t => {
-        const li = document.createElement("li");
-        li.textContent = t;
-        ul.appendChild(li);
-      });
-
-      cell.appendChild(ul);
-    }
-
-    calendar.appendChild(cell);
+  if (isMobile()) {
+    // setear semana inicial una sola vez si aún no está definida
+    if (weekIndex === null || weekIndex === undefined) weekIndex = computeInitialWeekIndex();
+    renderMobileWeek();
+  } else {
+    renderDesktopMonth();
   }
 }
+
+prevWeekBtn.addEventListener("click", () => {
+  if (weekIndex > 0) {
+    weekIndex--;
+    renderMobileWeek();
+  }
+});
+
+nextWeekBtn.addEventListener("click", () => {
+  if (weekIndex < 5) {
+    weekIndex++;
+    renderMobileWeek();
+  }
+});
+
+// Si cambia el tamaño (rotación o resize), re-render
+window.addEventListener("resize", () => {
+  // si pasamos a mobile, aseguramos weekIndex coherente
+  if (isMobile()) {
+    if (weekIndex === null || weekIndex === undefined) weekIndex = computeInitialWeekIndex();
+    renderMobileWeek();
+  } else {
+    renderDesktopMonth();
+  }
+});
 
 (async function init(){
   try {
@@ -196,7 +371,10 @@ if (tieneMartin) {
   } catch(e) {
     console.error("Error cargando datos", e);
   }
-  renderCalendar();
+
+  // Inicializamos weekIndex para móvil con la semana que contiene hoy
+  weekIndex = computeInitialWeekIndex();
+  render();
 })();
 </script>
 
